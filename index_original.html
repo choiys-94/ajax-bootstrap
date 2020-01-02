@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>choiys</title>
+<style>
+	.itemList{
+		background-color: #DAEAFF;
+		width: 200px;
+		margin-top: 3px;
+		margin-bottom: 3px;
+		padding-top: 5px;
+		padding-bottom: 5px;
+	}
+	.itemInfoBox{
+		background-color: #DAEAFF;
+		margin-top: 3px;
+		padding-top: 5px;
+		padding-bottom: 5px;
+	}
+	.itemInfoBox table td{
+		border: 1px solid #BBBBBB;
+		width: 200px;
+	}
+	.itemInfoBox table td input{
+		background: transparent; 
+		border: none; 
+		width: 100%;
+	}
+	.itemInfoBox textarea{
+		border: 1px solid #BBBBBB;
+		background-color: transparent;
+		min-height: 70px;
+		min-width: 99%;
+		max-width: 99%;
+	}
+</style>
+<script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+<script>
+	$(searchList());
+	
+	function searchList(op){
+		$.ajax({
+			url: "http://192.168.23.98:8090/api/prolist",
+			type: "GET",
+			dataType: "json",
+			success: function(res){
+				$('#iList').children().remove();
+				var list = res['resValue'];
+				for(var i=0; i<list.length; i++){
+					$('#iList').append("<li onclick='searchInfo(" + '"' + list[i]['num'] + '"' + ")'>" + list[i]['num'] + "</li>");
+				}
+				
+				if(op == null){
+					$('#res').html(res['resMsg']);
+				}
+				else{
+					$('#res').html(op);
+				}
+			},
+			error: function(request, status, error){
+			}
+		});
+	}
+	
+	var cur = -1;
+	
+	function searchInfo(num){
+		$.ajax({
+			url: "http://192.168.23.98:8090/api/proview/" + num,
+			type: "GET",
+			dataType: "json",
+			success: function(res){
+				var item = res['resValue'];
+				$('#num').val(item['num']);
+				$('#name').val(item['name']);
+				$('#price').val(item['price']);
+				$('#description').val(item['description']);
+				cur = item['num'];
+				
+				$('#res').html(res['resMsg']);
+			},
+			error: function(request, status, error){
+			}
+		});
+	}
+	
+	function addItem(){
+		var item = new Object();
+		item.num = $('#num').val();
+		item.name = $('#name').val();
+		item.price = $('#price').val();
+		item.description = $('#description').val();
+		
+		var json = JSON.stringify(item);
+		
+		$.ajax({
+			url: "http://192.168.23.98:8090/api/proreg",
+			type: "POST",
+			contentType: "application/json",
+			dataType: "json",
+			data: json,
+			success: function(res){
+				searchList(res['resMsg']);
+				clearItem();
+				cur = -1;
+			},
+			error: function(request, status, error){
+			}
+		});
+	}
+	
+	function updateItem(){
+		if(cur == -1)
+			return;
+		
+		console.log(cur);
+		
+		var item = new Object();
+		item.num = $('#num').val();
+		item.name = $('#name').val();
+		item.price = $('#price').val();
+		item.description = $('#description').val();
+		
+		var json = JSON.stringify(item);
+		
+		$.ajax({
+			url: "http://192.168.23.98:8090/api/proupdate",
+			type: "PUT",
+			contentType: "application/json",
+			dataType: "json",
+			data: json,
+			success: function(res){
+				searchList(res['resMsg']);
+				clearItem();
+				cur = -1;
+			},
+			error: function(request, status, error){
+			}
+		});
+	}
+	
+	function deleteItem(){
+		if(cur == -1)
+			return;
+		
+		$.ajax({
+			url: "http://192.168.23.98:8090/api/prodelete/" + cur,
+			type: "DELETE",
+			dataType: "json",
+			success: function(res){
+				searchList(res['resMsg']);
+				clearItem();
+				cur = -1;
+			},
+			error: function(request, status, error){
+			}
+		});
+	}
+	
+	function clearItem(){
+		$('#num').val('');
+		$('#name').val('');
+		$('#price').val('');
+		$('#description').val('');
+	}
+</script>
+</head> 
+<body>
+	<div style="text-align: center;">
+		<h1>Welcome To SSAFY</h1>
+	</div>
+	<hr>
+	<h2>상품 관리</h2>
+	<button type="button" onclick="searchList()">목록조회</button> &nbsp;(상세 내용을 조회하기 위해서 목록의 아이템을 클릭하세요.)
+	<div class="itemList">
+		<ul class="iList" id="iList">
+		</ul>
+	</div> 
+	<button type="button" onclick="addItem()">추가</button> 
+	<button type="button" onclick="updateItem()">수정</button> 
+	<button type="button" onclick="deleteItem()">삭제</button> 
+	<div class="itemInfoBox">
+		<table>
+			<tr>
+				<td style="width: 80px; background-color: #8A9AAF;">ID</td>
+				<td><input type="text" id="num" /></td>
+			</tr>
+			<tr>
+				<td style="width: 80px; background-color: #8A9AAF;">이름</td>
+				<td><input type="text" id="name" /></td>
+			</tr>
+			<tr>
+				<td style="width: 80px; background-color: #8A9AAF;">가격</td>
+				<td><input type="text" id="price" /></td>
+			</tr>
+		</table>
+		<textarea id="description"></textarea>
+	</div>
+	<div style="width: 250px; background-color: #DAEAFF; padding: 1px; margin-top: 2px;">
+		<span style="font-size: 1.2em;" id="res">&nbsp;</span>
+	</div>
+</body>
+</html>
